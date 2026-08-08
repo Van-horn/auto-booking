@@ -26,16 +26,18 @@ export function HomeScreen() {
     setError(null);
     try {
       const { isoYear, isoWeek } = getISOWeekInfo(new Date());
-      const [data, pausedId] = await Promise.all([
-        getWeekSchedule({ year: isoYear, week: isoWeek }),
-        getPausedScheduleId(),
-      ]);
+      const data = await getWeekSchedule({ year: isoYear, week: isoWeek });
       setSchedule(data);
-      setPausedIdState(pausedId);
     } catch (err) {
       setError(err);
     } finally {
       setIsLoading(false);
+    }
+
+    try {
+      setPausedIdState(await getPausedScheduleId());
+    } catch {
+      setPausedIdState(null);
     }
   }, []);
 
@@ -99,7 +101,7 @@ export function HomeScreen() {
 
           {isLoading ? <p className="status-text">Загрузка…</p> : null}
 
-          {error ? <p className="status-text">Не удалось загрузить расписание</p> : null}
+          {error ? <p className="status-text">{error.message || 'Не удалось загрузить расписание'}</p> : null}
 
           {!isLoading && !error && nextDayTrainings.length > 0
             ? nextDayTrainings.map((match) => (

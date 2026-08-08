@@ -3,20 +3,29 @@ import sodium from 'libsodium-wrappers';
 import {
   GITHUB_BRANCH,
   GITHUB_OWNER,
-  GITHUB_PAT,
   GITHUB_REPO,
   LOGS_PATH,
+  MOBIFIT_SECRET_NAME,
+  PAUSE_VARIABLE_NAME,
 } from '@/shared/lib/github-config';
+import { getGithubToken } from '@/shared/lib/github-token';
 
 const API_BASE = 'https://api.github.com';
 const REPO_PATH = `repos/${GITHUB_OWNER}/${GITHUB_REPO}`;
 
 async function ghRequest(path, options = {}) {
+  const token = getGithubToken();
+  if (!token) {
+    const error = new Error('GitHub токен не задан');
+    error.status = 401;
+    throw error;
+  }
+
   const response = await fetch(`${API_BASE}/${path}`, {
     ...options,
     headers: {
       Accept: 'application/vnd.github+json',
-      Authorization: `Bearer ${GITHUB_PAT}`,
+      Authorization: `Bearer ${token}`,
       'X-GitHub-Api-Version': '2022-11-28',
       ...options.headers,
     },
@@ -36,7 +45,7 @@ async function ghRequest(path, options = {}) {
 
 export async function getPausedScheduleId() {
   try {
-    const data = await ghRequest(`${REPO_PATH}/actions/variables/PAUSED_SCHEDULE_ID`);
+    const data = await ghRequest(`${REPO_PATH}/actions/variables/${PAUSE_VARIABLE_NAME}`);
     return data?.value || null;
   } catch (error) {
     if (error.status === 404) return null;
@@ -47,15 +56,15 @@ export async function getPausedScheduleId() {
 export async function setPausedScheduleId(scheduleId) {
   const value = scheduleId ?? '';
   try {
-    await ghRequest(`${REPO_PATH}/actions/variables/PAUSED_SCHEDULE_ID`, {
+    await ghRequest(`${REPO_PATH}/actions/variables/${PAUSE_VARIABLE_NAME}`, {
       method: 'PATCH',
-      body: JSON.stringify({ name: 'PAUSED_SCHEDULE_ID', value }),
+      body: JSON.stringify({ name: PAUSE_VARIABLE_NAME, value }),
     });
   } catch (error) {
     if (error.status !== 404) throw error;
     await ghRequest(`${REPO_PATH}/actions/variables`, {
       method: 'POST',
-      body: JSON.stringify({ name: 'PAUSED_SCHEDULE_ID', value }),
+      body: JSON.stringify({ name: PAUSE_VARIABLE_NAME, value }),
     });
   }
 }
@@ -69,7 +78,7 @@ export async function setMobifitTokenSecret(token) {
   const encryptedBytes = sodium.crypto_box_seal(messageBytes, keyBytes);
   const encryptedValue = sodium.to_base64(encryptedBytes, sodium.base64_variants.ORIGINAL);
 
-  await ghRequest(`${REPO_PATH}/actions/secrets/MOBIFIT_TOKEN`, {
+  await ghRequest(`${REPO_PATH}/actions/secrets/${MOBIFIT_SECRET_NAME}`, {
     method: 'PUT',
     body: JSON.stringify({ encrypted_value: encryptedValue, key_id: publicKey.key_id }),
   });
