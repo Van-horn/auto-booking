@@ -1,3 +1,14 @@
-# Expo HAS CHANGED
+# Стек проекта
 
-Read the exact versioned docs at https://docs.expo.dev/versions/v57.0.0/ before writing any code.
+Нет мобильного приложения и нет своего бэкенда. Есть три части:
+
+- `web/` — обычное React (Vite) веб-приложение, plain JS без TypeScript.
+  Собирается в `docs/`, который отдаёт GitHub Pages.
+- `automation/auto-booking.mjs` — plain Node ESM скрипт (без зависимостей,
+  глобальный `fetch`), выполняется GitHub Actions по расписанию.
+- `.github/workflows/` — сама автоматизация: бронирование по расписанию и
+  пересборка `web/` в `docs/` при пуше.
+
+Токены (GitHub PAT, токен mobifitness) хранятся только в `localStorage`
+браузера через страницу Settings — никогда не коммитятся в код (GitHub
+автоматически отзывает PAT, найденные в публичных коммитах).

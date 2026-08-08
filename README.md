@@ -1,45 +1,36 @@
-# Welcome to your Expo app 👋
+# auto-booking
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Автозапись на тренировки в mobifitness.ru, без телефона и без бэкенда.
 
-## Get started
+## Структура
 
-1. Install dependencies
+- `web/` — исходники панели управления (React + Vite): расписание, пауза одной
+  тренировки, логи, токены. Собирается в `docs/`.
+- `docs/` — собранный статический сайт (`npm run build` в `web/`), его отдаёт
+  GitHub Pages: https://van-horn.github.io/auto-booking/
+- `automation/auto-booking.mjs` — скрипт бронирования, который выполняет GitHub
+  Actions по расписанию.
+- `.github/workflows/auto-booking.yml` — сама автозапись: запускается по
+  Пн/Ср/Пт/Сб в 05:58 UTC (08:58 по Минску), ждёт ровно 09:00:00 по Минску и
+  бронирует тренировку на завтра.
+- `.github/workflows/build-pages.yml` — пересобирает `web/` в `docs/` при
+  каждом пуше, чтобы сайт всегда был актуальным.
+- `state/logs.json` — лог последних прогонов автозаписи, читается панелью
+  управления.
 
-   ```bash
-   npm install
-   ```
+## Разработка панели управления
 
-2. Start the app
+```bash
+cd web
+npm install
+npm run dev
+```
 
-   ```bash
-   npx expo start
-   ```
+## Настройка
 
-In the output, you'll find options to open the app in a
+В Settings панели управления нужно один раз ввести:
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-Routes live in `src/app` (file-based routing). Application code follows Feature-Sliced Design under `src/` (`app`, `pages`, `widgets`, `features`, `entities`, `shared`), and state/data-fetching uses RTK Query (`src/shared/api`, `src/app/store`).
-
-### Other setup steps
-
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+1. **GitHub токен** (scope `repo`) — хранится только в localStorage браузера,
+   им панель управляет паузой и логами через GitHub API.
+2. **Токен mobifitness** — сохраняется локально и шифруется в GitHub Secret
+   `MOBIFIT_TOKEN`, который читает пайплайн для бронирования.
