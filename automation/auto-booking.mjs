@@ -131,7 +131,7 @@ function reserveTraining(token, scheduleId) {
 // 09:00 Europe/Minsk (UTC+3, no DST) on the current UTC calendar day, plus a
 // small safety margin so minor clock drift on the runner can never make the
 // first reserve request go out before 09:00:00.
-const SAFETY_MARGIN_MS = 200;
+const SAFETY_MARGIN_MS = 20;
 
 function nineAmMinskUtc(now) {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 6, 0, 0, SAFETY_MARGIN_MS));
