@@ -1,0 +1,37 @@
+name: Auto-booking
+
+on:
+  # 05:58 UTC == 08:58 Europe/Minsk (UTC+3, без перехода на летнее время).
+  # Пн/Ср/Пт/Сб — дни открытия записи на тренировки Вт/Чт/Сб/Вс.
+  schedule:
+    - cron: '58 5 * * 1,3,5,6'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  book:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Run auto-booking
+        env:
+          MOBIFIT_TOKEN: ${{ secrets.MOBIFIT_TOKEN }}
+          PAUSED_SCHEDULE_ID: ${{ vars.PAUSED_SCHEDULE_ID }}
+          GH_PAT: ${{ secrets.GH_PAT }}
+        run: node automation/auto-booking.mjs
+
+      - name: Commit logs
+        run: |
+          git config user.name "auto-booking-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add state/logs.json
+          git diff --cached --quiet || git commit -m "chore: update auto-booking logs [skip ci]"
+          git push
