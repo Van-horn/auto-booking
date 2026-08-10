@@ -53,10 +53,10 @@ function TokenField({ label, hint, placeholder, storedValue, onSave, savedNote }
 }
 
 export function SettingsScreen() {
-  const [githubToken, setGithubTokenValue] = useState(null);
+  const [githubToken, setGithubTokenValue] = useState(undefined);
   const [githubSavedNote, setGithubSavedNote] = useState('');
 
-  const [mobifitToken, setMobifitTokenValue] = useState(null);
+  const [mobifitToken, setMobifitTokenValue] = useState(undefined);
   const [savedNote, setSavedNote] = useState('');
 
   useEffect(() => {
@@ -84,7 +84,7 @@ export function SettingsScreen() {
     }
   };
 
-  if (githubToken === null || mobifitToken === null) return null;
+  if (githubToken === undefined || mobifitToken === undefined) return null;
 
   return (
     <div className="screen">

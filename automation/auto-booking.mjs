@@ -142,6 +142,8 @@ function isoWeekdayOf(date) {
   return jsDay === 0 ? 7 : jsDay;
 }
 
+const DELAY_BETWEEN_BOOKINGS_MS = 300;
+
 async function attemptReserveWithRetries(token, rule, entry) {
   const maxAttempts = 8;
   const delayMs = 400;
@@ -254,12 +256,15 @@ async function main() {
   if (waitMs > 0) await sleepMs(waitMs);
 
   let pauseConsumed = false;
+  let isFirstBooking = true;
   for (const { rule, entry } of dueMatches) {
     if (entry.id === pausedScheduleId) {
       pushLog('warning', rule.title, `Пропущено по паузе из UI (${formatDateTime(entry.datetime)})`, entry.id);
       pauseConsumed = true;
       continue;
     }
+    if (!isFirstBooking) await sleepMs(DELAY_BETWEEN_BOOKINGS_MS);
+    isFirstBooking = false;
     await attemptReserveWithRetries(token, rule, entry);
   }
 

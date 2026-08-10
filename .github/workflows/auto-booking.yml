@@ -1,10 +1,22 @@
 name: Auto-booking
 
 on:
-  # 05:58 UTC == 08:58 Europe/Minsk (UTC+3, без перехода на летнее время).
-  # Пн/Ср/Пт/Сб — дни открытия записи на тренировки Вт/Чт/Сб/Вс.
-  schedule:
-    - cron: '58 5 * * 1,3,5,6'
+  # Триггер по расписанию GitHub Actions (`schedule:`) сюда намеренно не
+  # добавлен: по документации GitHub он может задерживаться (особенно в
+  # начале каждого часа) или вовсе не сработать при высокой нагрузке, без
+  # каких-либо гарантий по времени. На практике задержка доходила до 80+
+  # минут, из-за чего запись уходила намного позже открытия и не успевала.
+  #
+  # Вместо этого job запускает внешний точный cron-сервис (например,
+  # cron-job.org), который каждый Пн/Ср/Пт/Сб в 08:58 Europe/Minsk (05:58
+  # UTC) шлёт POST на GitHub API:
+  #   POST https://api.github.com/repos/<owner>/<repo>/actions/workflows/auto-booking.yml/dispatches
+  #   Authorization: Bearer <fine-grained PAT, только Actions: Read and write>
+  #   Accept: application/vnd.github+json
+  #   Body: {"ref":"main"}
+  # Сам скрипт всё равно досыпает до точного 09:00 МСК (nineAmMinskUtc в
+  # auto-booking.mjs), так что небольшая погрешность внешнего сервиса не
+  # страшна — это лишь запасной 2-минутный буфер перед открытием записи.
   workflow_dispatch:
 
 permissions:
