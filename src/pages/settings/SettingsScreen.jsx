@@ -90,7 +90,7 @@ export function SettingsScreen() {
     <div className="screen">
       <TokenField
         label="GitHub токен"
-        hint="Управляет пайплайном (пауза, логи, отправка токена ниже в GitHub Actions). Хранится только в этом браузере."
+        hint="Используется для отправки токена ниже в GitHub Actions. Хранится только в этом браузере."
         placeholder="ghp_… или github_pat_…"
         storedValue={githubToken}
         onSave={onSaveGithubToken}

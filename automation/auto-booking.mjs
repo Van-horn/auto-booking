@@ -1,10 +1,5 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import path from 'node:path';
-
 const CLUB_ID = 6119;
 const BASE_URL = 'https://mobifitness.ru/api/v8/';
-const LOGS_PATH = path.join(process.cwd(), 'state', 'logs.json');
-const MAX_LOGS = 200;
 
 // weekday: ISO weekday, 1 = Monday .. 7 = Sunday
 const RECURRING_TRAININGS = [
@@ -20,21 +15,6 @@ const RECURRING_TRAININGS = [
 ];
 
 const WEEKDAY_NAMES = ['', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
-
-const logs = [];
-
-function pushLog(level, title, message, scheduleId) {
-  const entry = {
-    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    timestamp: new Date().toISOString(),
-    level,
-    title,
-    message,
-    scheduleId,
-  };
-  logs.push(entry);
-  console.log(`[${level}] ${title}: ${message}`);
-}
 
 function sleepMs(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -131,7 +111,7 @@ function reserveTraining(token, scheduleId) {
 // 09:00 Europe/Minsk (UTC+3, no DST) on the current UTC calendar day, plus a
 // small safety margin so minor clock drift on the runner can never make the
 // first reserve request go out before 09:00:00.
-const SAFETY_MARGIN_MS = 2500;
+const SAFETY_MARGIN_MS = 2000;
 
 function nineAmMinskUtc(now) {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 6, 0, 0, SAFETY_MARGIN_MS));
@@ -151,15 +131,15 @@ async function attemptReserveWithRetries(token, rule, entry) {
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     try {
       await reserveTraining(token, entry.id);
-      pushLog('success', rule.title, `Автозапись выполнена (${formatDateTime(entry.datetime)})`, entry.id);
+      console.log(`[success] ${rule.title}: Автозапись выполнена (${formatDateTime(entry.datetime)})`);
       return;
     } catch (error) {
       if (isAlreadyReservedError(error)) {
-        pushLog('success', rule.title, `Уже записаны (${formatDateTime(entry.datetime)})`, entry.id);
+        console.log(`[success] ${rule.title}: Уже записаны (${formatDateTime(entry.datetime)})`);
         return;
       }
       if (attempt === maxAttempts) {
-        pushLog('error', rule.title, describeApiError(error), entry.id);
+        console.error(`[error] ${rule.title}: ${describeApiError(error)}`);
         return;
       }
       await sleepMs(delayMs);
@@ -167,45 +147,11 @@ async function attemptReserveWithRetries(token, rule, entry) {
   }
 }
 
-async function clearPausedScheduleId() {
-  const pat = process.env.GH_PAT;
-  const repo = process.env.GITHUB_REPOSITORY;
-  if (!pat || !repo) return;
-
-  try {
-    await fetch(`https://api.github.com/repos/${repo}/actions/variables/PAUSED_SCHEDULE_ID`, {
-      method: 'PATCH',
-      headers: {
-        Accept: 'application/vnd.github+json',
-        Authorization: `Bearer ${pat}`,
-        'X-GitHub-Api-Version': '2022-11-28',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ name: 'PAUSED_SCHEDULE_ID', value: '' }),
-    });
-  } catch (error) {
-    console.error('Не удалось сбросить паузу после использования:', error);
-  }
-}
-
-async function finish() {
-  let existing = [];
-  try {
-    existing = JSON.parse(await readFile(LOGS_PATH, 'utf8'));
-  } catch {
-    existing = [];
-  }
-  const merged = [...logs, ...existing].slice(0, MAX_LOGS);
-  await mkdir(path.dirname(LOGS_PATH), { recursive: true });
-  await writeFile(LOGS_PATH, `${JSON.stringify(merged, null, 2)}\n`);
-}
-
 async function main() {
   const token = process.env.MOBIFIT_TOKEN;
-  const pausedScheduleId = process.env.PAUSED_SCHEDULE_ID || '';
 
   if (!token) {
-    pushLog('error', 'Токен', 'MOBIFIT_TOKEN не задан в secrets репозитория');
+    console.error('[error] Токен: MOBIFIT_TOKEN не задан в secrets репозитория');
     return;
   }
 
@@ -216,7 +162,7 @@ async function main() {
   try {
     schedule = await getWeekSchedule(token, { year: isoYear, week: isoWeek });
   } catch (error) {
-    pushLog('error', 'Расписание', describeApiError(error));
+    console.error(`[error] Расписание: ${describeApiError(error)}`);
     return;
   }
 
@@ -228,25 +174,16 @@ async function main() {
   for (const match of matches) {
     if (match.rule.weekday !== tomorrowWeekday) continue;
     if (match.status === 'not-found') {
-      pushLog(
-        'warning',
-        match.rule.title,
-        `Тренировка не найдена в расписании (ожидалось ${formatRuleSlot(match.rule)})`
-      );
+      console.warn(`[warning] ${match.rule.title}: Тренировка не найдена в расписании (ожидалось ${formatRuleSlot(match.rule)})`);
     } else if (match.status === 'canceled') {
-      pushLog(
-        'warning',
-        match.rule.title,
-        `Тренировка отменена клубом (${formatDateTime(match.entry.datetime)})`,
-        match.entry.id
-      );
+      console.warn(`[warning] ${match.rule.title}: Тренировка отменена клубом (${formatDateTime(match.entry.datetime)})`);
     }
   }
 
   const dueMatches = matches.filter((match) => match.status === 'matched' && match.rule.weekday === tomorrowWeekday);
 
   if (dueMatches.length === 0) {
-    pushLog('warning', 'Автозапись', 'Нет тренировок для бронирования на сегодняшнее открытие записи');
+    console.warn('[warning] Автозапись: Нет тренировок для бронирования на сегодняшнее открытие записи');
     return;
   }
 
@@ -255,24 +192,14 @@ async function main() {
   console.log(`Открытие записи в ${target.toISOString()} (09:00 МСК/Минск). Ожидание ${Math.max(0, Math.round(waitMs / 1000))} c...`);
   if (waitMs > 0) await sleepMs(waitMs);
 
-  let pauseConsumed = false;
   let isFirstBooking = true;
   for (const { rule, entry } of dueMatches) {
-    if (entry.id === pausedScheduleId) {
-      pushLog('warning', rule.title, `Пропущено по паузе из UI (${formatDateTime(entry.datetime)})`, entry.id);
-      pauseConsumed = true;
-      continue;
-    }
     if (!isFirstBooking) await sleepMs(DELAY_BETWEEN_BOOKINGS_MS);
     isFirstBooking = false;
     await attemptReserveWithRetries(token, rule, entry);
   }
-
-  if (pauseConsumed) await clearPausedScheduleId();
 }
 
-main()
-  .catch((error) => {
-    pushLog('error', 'Скрипт', describeApiError(error));
-  })
-  .finally(finish);
+main().catch((error) => {
+  console.error(`[error] Скрипт: ${describeApiError(error)}`);
+});

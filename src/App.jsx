@@ -1,12 +1,10 @@
 import { useState } from 'react';
 
 import { HomeScreen } from '@/pages/home/HomeScreen';
-import { LogsScreen } from '@/pages/logs/LogsScreen';
 import { SettingsScreen } from '@/pages/settings/SettingsScreen';
 
 const TABS = [
   { key: 'home', title: 'Главная', Component: HomeScreen },
-  { key: 'logs', title: 'Логи', Component: LogsScreen },
   { key: 'settings', title: 'Settings', Component: SettingsScreen },
 ];
 

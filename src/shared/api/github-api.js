@@ -1,13 +1,6 @@
 import sodium from 'libsodium-wrappers';
 
-import {
-  GITHUB_BRANCH,
-  GITHUB_OWNER,
-  GITHUB_REPO,
-  LOGS_PATH,
-  MOBIFIT_SECRET_NAME,
-  PAUSE_VARIABLE_NAME,
-} from '@/shared/lib/github-config';
+import { GITHUB_OWNER, GITHUB_REPO, MOBIFIT_SECRET_NAME } from '@/shared/lib/github-config';
 import { getGithubToken } from '@/shared/lib/github-token';
 
 const API_BASE = 'https://api.github.com';
@@ -43,32 +36,6 @@ async function ghRequest(path, options = {}) {
   return data;
 }
 
-export async function getPausedScheduleId() {
-  try {
-    const data = await ghRequest(`${REPO_PATH}/actions/variables/${PAUSE_VARIABLE_NAME}`);
-    return data?.value || null;
-  } catch (error) {
-    if (error.status === 404) return null;
-    throw error;
-  }
-}
-
-export async function setPausedScheduleId(scheduleId) {
-  const value = scheduleId ?? '';
-  try {
-    await ghRequest(`${REPO_PATH}/actions/variables/${PAUSE_VARIABLE_NAME}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ name: PAUSE_VARIABLE_NAME, value }),
-    });
-  } catch (error) {
-    if (error.status !== 404) throw error;
-    await ghRequest(`${REPO_PATH}/actions/variables`, {
-      method: 'POST',
-      body: JSON.stringify({ name: PAUSE_VARIABLE_NAME, value }),
-    });
-  }
-}
-
 export async function setMobifitTokenSecret(token) {
   await sodium.ready;
   const publicKey = await ghRequest(`${REPO_PATH}/actions/secrets/public-key`);
@@ -81,36 +48,6 @@ export async function setMobifitTokenSecret(token) {
   await ghRequest(`${REPO_PATH}/actions/secrets/${MOBIFIT_SECRET_NAME}`, {
     method: 'PUT',
     body: JSON.stringify({ encrypted_value: encryptedValue, key_id: publicKey.key_id }),
-  });
-}
-
-async function fetchLogsFile() {
-  try {
-    const data = await ghRequest(`${REPO_PATH}/contents/${LOGS_PATH}?ref=${GITHUB_BRANCH}`);
-    const json = decodeURIComponent(escape(atob(data.content)));
-    return { logs: JSON.parse(json), sha: data.sha };
-  } catch (error) {
-    if (error.status === 404) return { logs: [], sha: null };
-    throw error;
-  }
-}
-
-export async function fetchLogs() {
-  const { logs } = await fetchLogsFile();
-  return logs;
-}
-
-export async function clearLogs() {
-  const { sha } = await fetchLogsFile();
-  if (!sha) return;
-  await ghRequest(`${REPO_PATH}/contents/${LOGS_PATH}`, {
-    method: 'PUT',
-    body: JSON.stringify({
-      message: 'chore: clear auto-booking logs',
-      content: btoa(unescape(encodeURIComponent('[]'))),
-      sha,
-      branch: GITHUB_BRANCH,
-    }),
   });
 }
 

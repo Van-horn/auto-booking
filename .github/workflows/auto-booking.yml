@@ -19,9 +19,6 @@ on:
   # страшна — это лишь запасной 2-минутный буфер перед открытием записи.
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 jobs:
   book:
     runs-on: ubuntu-latest
@@ -36,14 +33,4 @@ jobs:
       - name: Run auto-booking
         env:
           MOBIFIT_TOKEN: ${{ secrets.MOBIFIT_TOKEN }}
-          PAUSED_SCHEDULE_ID: ${{ vars.PAUSED_SCHEDULE_ID }}
-          GH_PAT: ${{ secrets.GH_PAT }}
         run: node automation/auto-booking.mjs
-
-      - name: Commit logs
-        run: |
-          git config user.name "auto-booking-bot"
-          git config user.email "actions@users.noreply.github.com"
-          git add state/logs.json
-          git diff --cached --quiet || git commit -m "chore: update auto-booking logs [skip ci]"
-          git push
