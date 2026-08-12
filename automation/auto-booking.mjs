@@ -131,7 +131,7 @@ function reserveTraining(token, scheduleId) {
 // 09:00 Europe/Minsk (UTC+3, no DST) on the current UTC calendar day, plus a
 // small safety margin so minor clock drift on the runner can never make the
 // first reserve request go out before 09:00:00.
-const SAFETY_MARGIN_MS = 20;
+const SAFETY_MARGIN_MS = 2500;
 
 function nineAmMinskUtc(now) {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 6, 0, 0, SAFETY_MARGIN_MS));
@@ -142,11 +142,11 @@ function isoWeekdayOf(date) {
   return jsDay === 0 ? 7 : jsDay;
 }
 
-const DELAY_BETWEEN_BOOKINGS_MS = 300;
+const DELAY_BETWEEN_BOOKINGS_MS = 1800;
 
 async function attemptReserveWithRetries(token, rule, entry) {
-  const maxAttempts = 8;
-  const delayMs = 400;
+  const maxAttempts = 3;
+  const delayMs = 1500;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     try {

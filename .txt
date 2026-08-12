@@ -1,0 +1,46 @@
+:authority
+mobifitness.ru
+:method
+POST
+:path
+/api/v8/account/reserve.json
+:scheme
+https
+accept
+application/json, text/javascript, */*; q=0.01
+accept-encoding
+gzip, deflate, br, zstd
+accept-language
+en
+authorization
+Bearer 201a34b8-a855-4494-b529-b192e8774132
+content-length
+38
+content-type
+application/x-www-form-urlencoded; charset=UTF-8
+origin
+https://mobifitness.ru
+priority
+u=1, i
+referer
+https://mobifitness.ru/schedule-widget/?code=581466&type=schedule&club=6119&host=mobifitness.ru&storagePrefix=storage.&version=v6&direction=0&group=0&activity=0&trainer=0&room=0&age=&level=&year=0&week=0&icons={%20%27(Zumba)%27:{%20url:%27https://adrenalin-fitness.by/assets/template/img/srg/logoz.png%27,%20W:%27100px%27,%20H:%2728px%27}}&test=0&debug=0&desc=&scheduleOpenAt=&section=&filterClub=0&filterActivity=0&filterTrainer=0&language=&shopAuth=0&metrics=%7B%22http_referer%22%3A%22https%3A%2F%2Fwww.google.com%2F%22%7D&parent=https://vostok.adrenalin.by/gruppovye-zanyatiya/?mfw_10s
+sec-ch-ua
+"Google Chrome";v="149", "Chromium";v="149", "Not)A;Brand";v="24"
+sec-ch-ua-mobile
+?0
+sec-ch-ua-platform
+"Linux"
+sec-fetch-dest
+empty
+sec-fetch-mode
+cors
+sec-fetch-site
+same-origin
+sec-fetch-storage-access
+active
+user-agent
+Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36
+x-angular-widget
+true
+x-requested-with
+XMLHttpRequest
